@@ -36,7 +36,7 @@ ALPHA CRYSTALLIN C CHAIN (ALPHA(C)-CRYSTALLIN).
 
 """
 
-def Parser(file_name, file_type):
+def parser(file_name, file_type):
     #accession_number = ''
     accession_id = 0
     tmp_seq = ''
@@ -65,8 +65,8 @@ def Parser(file_name, file_type):
 
 seq_objects = []
 
-#Parser('test.pir', '.pir')
-Parser('nad3.pir', '.pir')
+#parser('test.pir', '.pir')
+parser('nad3.pir', '.pir')
 
 trans = [seq_objects[n].sequence for n in range( len(seq_objects) )]
 
@@ -82,15 +82,44 @@ for i in range(0, seq_length):
 #    print(obj.name)
 
 
+
+####################################
+############ DEFINITIONS ###########
 ####################################
 
-def 
+nr_seqs = len(seq_objects)
+
+# IS  - 50% of nr of sequences + 1
+_is = round((nr_seqs * 0.5) + 1) # !!! ROUND OR NOT?
+# FS  - 85% of nr of sequences
+_fs = round((nr_seqs * 0.85))
+_cp = 8
+_bl1 = 15
+_bl2 = 10
+
+
+####################################
+
+conservation_level = ['nonconserved', 'conserved', 'highly_conserved']
+
+def classifier(col, eq, most_abundant, max_freq, perc_freq, gaps):
+    if(perc_freq < _is or gaps):
+        return conservation_level[0]
+    
+    elif((perc_freq > _is) and (perc_freq < _fs)):
+        return conservation_level[1]
+    
+    elif(perc_freq > _fs):
+        return conservation_level[2]
+    
+    
+    
 
 ####################################
 
 
 print('### STATS ###')
-print('Number of sequences: %d' % len(seq_objects))
+print('Number of sequences: %d' % nr_seqs)
 print('\n')
 print('%s\t%s\t%s\t%s\t%s\t%s'%
       ('Col.', 'All_eq', 'Most_ab', 'Max_frq', 'Frq %', 'Gaps'))
@@ -98,15 +127,24 @@ for i, residue in enumerate(t):
     #for i in (len(residue)):
      
     mc = max(x for x in residue)
+    eq = all(x==residue[0] for x in residue)
     rc = residue.count(mc)
+    fp = (rc / len(residue)) * 100
+    gap = ('-' in residue)
+    
+    conservation = classifier(i, eq, mc, rc, fp, gap)
+    
     #at = all(x==residue[0] for x in residue)
-    print('%s\t%s\t%s\t%s\t%s\t%s'%
+    print('%s\t%s\t%s\t%s\t%s\t%s\t%s'%
           (i,
-          all(x==residue[0] for x in residue), # are all values equal?
+          eq, # are all values equal?
           mc, # most common amino acid
           rc, # occurrence of most common amino acid
-          (rc / len(residue)) * 100, # occurrence %
-          ('-' in residue))) # do gaps occur?
+          fp, # occurrence %
+          gap,# do gaps occur?
+          conservation))
+    
+    
 
     
 
