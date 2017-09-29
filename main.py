@@ -5,6 +5,8 @@ Created on Thu Sep 28 09:35:26 2017
 
 @author: martin
 """
+from collections import Counter
+import pandas as pd
 
 class Sequence(object):
     
@@ -61,14 +63,24 @@ def parser(file_name, file_type):
                     
                     seq_objects.append(seq)
 
-# --------------------------------------------------------
+# -------------------------------------------------------ME-------
 
 seq_objects = []
 
 #parser('test.pir', '.pir')
 parser('nad3.pir', '.pir')
 
-trans = [seq_objects[n].sequence for n in range( len(seq_objects) )]
+seq_matrix = [seq_objects[n].sequence for n in range( len(seq_objects) )]
+
+k = [[f for f in s] for s in seq_matrix]
+
+data_frame = pd.DataFrame(k)
+df = data_frame.transpose()
+
+
+
+
+
 
 t = []
 
@@ -77,9 +89,12 @@ seq_length = len(seq_objects[0].sequence)
 for i in range(0, seq_length):
     residues = [n.sequence[i] for n in seq_objects]
     t.append(residues)
+    
+    
+
 
 #for obj in seq_objects:
-#    print(obj.name)
+#    print(obj.name)------ME
 
 
 
@@ -90,18 +105,24 @@ for i in range(0, seq_length):
 nr_seqs = len(seq_objects)
 
 # IS  - 50% of nr of sequences + 1
-_is = round((nr_seqs * 0.5) + 1) # !!! ROUND OR NOT?
+_is = int((nr_seqs * 0.5) + 1)
 # FS  - 85% of nr of sequences
-_fs = round((nr_seqs * 0.85))
+_fs = int((nr_seqs * 0.85))
 _cp = 8
 _bl1 = 15
 _bl2 = 10
 
+# Example:
+# Nr seqs:  17
+# IS:       9.5
+# FS:       14.45
+
 
 ####################################
 
-conservation_level = ['nonconserved', 'conserved', 'highly_conserved']
+conservation_level = ['n', 'c', 'h']
 
+"""
 def classifier(col, eq, most_abundant, max_freq, perc_freq, gaps):
     if(perc_freq < _is or gaps):
         return conservation_level[0]
@@ -111,29 +132,70 @@ def classifier(col, eq, most_abundant, max_freq, perc_freq, gaps):
     
     elif(perc_freq > _fs):
         return conservation_level[2]
+"""
+
+def classifier(is_gap, frequency_perc):
+    if(frequency_perc < _is or is_gap):
+        return conservation_level[0]
     
+    elif((frequency_perc > _is) and (frequency_perc < _fs)):
+        return conservation_level[1]
+    
+    elif(frequency_perc > _fs):
+        return conservation_level[2]
     
     
 
 ####################################
 
 
-print('### STATS ###')
-print('Number of sequences: %d' % nr_seqs)
-print('\n')
-print('%s\t%s\t%s\t%s\t%s\t%s'%
-      ('Col.', 'All_eq', 'Most_ab', 'Max_frq', 'Frq %', 'Gaps'))
+#print('### STATS ###')
+#print('Number of sequences: %d' % nr_seqs)
+#print('\n')
+#print('%s\t%s\t%s\t%s\t%s\t%s'%
+#      ('Col.', 'All_eq', 'Most_ab', 'Max_frq', 'Frq %', 'Gaps'))
+
+
+
+temp = []
+
+
+
 for i, residue in enumerate(t):
     #for i in (len(residue)):
-     
-    mc = max(x for x in residue)
+    cons = []
+#    freq = []
+    
+    mc_count = Counter(residue)
+    mc = mc_count.most_common(1)
+    mc = mc[0][0]
+    #mc = max(x for x in residue)
     eq = all(x==residue[0] for x in residue)
     rc = residue.count(mc)
     fp = (rc / len(residue)) * 100
     gap = ('-' in residue)
     
-    conservation = classifier(i, eq, mc, rc, fp, gap)
+    for x in residue:
+        frequency = residue.count(x)
+        frequency_perc = (frequency / len(residue)) * 100
+        is_gap = (x == '-')
+
+        conservation = classifier(is_gap, frequency_perc)
+        
+           
+        cons.extend(conservation)
     
+    
+        
+#        freq.append(round(frequency_perc))
+#    print(i+1, cons)
+#    print(i+1, freq)
+#    print(i+1, residue)
+    
+    
+    
+"""    
+
     #at = all(x==residue[0] for x in residue)
     print('%s\t%s\t%s\t%s\t%s\t%s\t%s'%
           (i,
@@ -143,8 +205,8 @@ for i, residue in enumerate(t):
           fp, # occurrence %
           gap,# do gaps occur?
           conservation))
-    
-    
+    print(residue)
+"""    
 
     
 
