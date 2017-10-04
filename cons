@@ -1,0 +1,64 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import time
+from Bio import SeqIO
+from collections import Counter
+
+start = time.clock()
+
+alignment = list(SeqIO.parse('nad3.pir', 'pir'))
+
+sequence_matrix = [list(s.seq) for s in alignment]
+
+# Transposed sequence_matrix
+positions = [list(i) for i in zip(*sequence_matrix)]
+
+"""
+positions[0]:
+['-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', 'M', '-', '-', '-']
+
+i.e. the 0th character of each sequence
+
+"""
+
+nr_seqs = len(positions[0])
+# User-adjustable parameters
+_is     = int((nr_seqs * 0.5) + 1)
+_fs     = int((nr_seqs * 0.85))
+_cp     = 8
+_bl_1   = 15
+_bl_2   = 10
+
+
+def classifier(freq, most_common_freq):  
+    if(most_common_freq < _is):
+        return 0
+    elif((most_common_freq >= _is) and (most_common_freq < _fs)):
+        return 1
+    elif(most_common_freq >= _fs):
+        return 2
+
+def conservation(pos):
+    max_residue = max(pos,key=pos.count)
+    max_freq = pos.count(max_residue)
+    
+    if(any(v == '-' for v in pos)):
+        return(0)
+    else:
+        return classifier(max_residue, max_freq)
+    
+counter = 0
+cons = {}
+for index, p in enumerate(positions):
+    c = conservation(p)
+    if(c == 0):
+        counter += 1
+    else:
+        counter = 0
+    if(counter < 9):
+        cons[index] = c
+    elif(counter == 9):
+        print(index)
+        for k in range(index-8, index):
+            del cons[k]
