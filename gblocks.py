@@ -7,7 +7,7 @@ from Bio.Seq import Seq
 
 start = time.clock()
 
-alignment = list(SeqIO.parse('nad3.pir', 'pir'))
+alignment = list(SeqIO.parse('nad5.pir', 'pir'))
 
 sequence_matrix = [list(s.seq) for s in alignment]
 
@@ -46,7 +46,7 @@ def classifier(freq, most_common_freq):
 def set_conservation(pos):
     max_residue = max(pos,key=pos.count)
     max_freq = pos.count(max_residue)
-    
+ #   print(pos)
     if(any(v == '-' for v in pos)):
         return(-1)
     else:
@@ -55,18 +55,18 @@ def set_conservation(pos):
 counter = 0
 cons_level = {}
 for index, p in enumerate(positions):
-    c = set_conservation(p)
-    if(c <= 0):
-        counter += 1
-    else:
-        counter = 0
-    if(counter < 9):
-        cons_level[index] = c
-    elif(counter == 9):
-        for k in range(index-8, index):
-            del cons_level[k]
-
-
+#    if(index > 339 and index < 351):
+        c = set_conservation(p)
+  #      print(index+1, c)
+        if(c <= 0):
+            counter += 1
+        else:
+            counter = 0
+        if(counter < 9):
+            cons_level[index] = c
+        elif(counter == 9):
+            for k in range(index-8, index):
+                del cons_level[k]
 
 # cons_level    - a dict with all remaining positions and their conservation level
 # blocks_1      - one dict for each block (i.e. split by consecutive nonconserved regions)
@@ -85,7 +85,7 @@ from itertools import groupby, count
 blocks_1 = group_by_consecutives(cons_level)
 
 # Look for HC values (=2) and keep the indices of these in a list 
-hc_positions = [[(k) for k,v in (d.items()) if v == 2] for d in blocks_1]
+hc_positions = [[k for k,v in sorted(d.items()) if v == 2] for d in blocks_1]
 # Extract the first and last HC in each block
 flanks = [(f[0], f[-1]) for f in hc_positions if len(f) > 1]
 
@@ -98,9 +98,10 @@ for block in blocks_2:
     is_gap = False
     before = 0
     after = 0
-    for k,v in block.items():
+    for k,v in sorted(block.items()):
         if(v == -1):
             is_gap = True
+            print(range(k-before,k+1))
             gaps.extend([g for g in range(k-before,k+1)])
         if(v == 0 and is_gap == False):
             before += 1
@@ -109,14 +110,11 @@ for block in blocks_2:
         if(v == 0 and is_gap == True):
             after += 1
         elif(v > 0 and is_gap == True):
-            gaps.extend([g for g in range(k-1,k-1+after)])
+            gaps.extend([g for g in range((k-1-after), k)])
             before = 0
             is_gap = False
     if(len(gaps) != 0):
         all_gaps.extend(gaps)
-
-
-
 
 blocks_3 = {}
 for b in blocks_2:
@@ -125,24 +123,52 @@ for b in blocks_2:
             blocks_3[k] = v
     
 blocks_4 = group_by_consecutives(blocks_3)
+for i, block in enumerate(blocks_4):
+    if len(block) <= _bl_2:
+        #print(blocks_4[i])
+        blocks_4.pop(i)
 
 new_positions = []
 
 for b in blocks_4:
-    for k,v in b.items():
+    #print(b)
+    for k,v in sorted(b.items()):
         #print(k,v)
         new_positions.append(positions[k])
 
 new_alignment = [list(i) for i in zip(*new_positions)]
 
-
-
 for i,s in enumerate(alignment):
     new_seq = Seq(''.join(new_alignment[i]))
     s.seq = new_seq
 
-SeqIO.write(alignment, "output.fna", "fasta")
+SeqIO.write(alignment, "output5.fna", "fasta")
 
-    
 end = time.clock()
 print(end-start)
+    
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
