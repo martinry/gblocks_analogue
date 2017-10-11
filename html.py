@@ -168,10 +168,7 @@ def hover(hover_color="#ffff99"):
                 props=[("background-color", "%s" % hover_color)])
 
 
-
-
-
-def blocks(col='#E5D283'):
+#def blocks(col='#E5D283'):
     
            
 
@@ -183,15 +180,19 @@ def highlight_cols(x):
     #d[d.columns] = 'background-color: red'
     #d.columns = 'background-color: red'
     #overwrite values grey color
-    
-    #d[[10,24]] = 'background-color: grey'
+    hb = [item for sublist in blocks_5 for item in sublist if item in d.columns]
+    #print(hb)
+    #test_cols = [1,2,3,4,5,6,7,22]
+    #d[test_cols] = 'background-color: grey'
+    d[hb] = 'background-color: #8ee5ee'
+  #  d[[11,22]] = 'border-color: none'
     #return color df
     return d  
 
 styles = [
     hover(),
     dict(selector="th",
-                 props=[("font-size", "8pt"), ('background-color', 'red')]),
+                 props=[("font-size", "0pt")]),
     dict(selector="tbody",
                  props=[("font-size", "8pt")])]
 
@@ -200,13 +201,18 @@ styles = [
 #    dict(selector="caption", props=[("caption-side", "bottom")])
 
 
-html = ''
+html = []
 
 
 df.columns += 1
 df.index += 1
 
 df.index = [alignment[i].id for i in range(len(df.index))]
+
+
+#app = df.style.set_table_styles(styles)
+
+
 
 
 nr_columns = len(df.columns)
@@ -219,22 +225,27 @@ col = [i for i in range(0,nr_columns) if (i % 40 == 0)]
 
 for i,c in enumerate(col):
     if(c == col[-1]):
-        html += (df[df.columns[c:]].style.apply(highlight_cols, axis=None).set_table_styles(styles).render())
+        html.append(df[df.columns[c:]])
     else:
        # print(i)
-        html += (df[df.columns[c:col[i+1]]].style.apply(highlight_cols, axis=None).set_table_styles(styles).render())
+        html.append(df[df.columns[c:col[i+1]]])
+
+
+#html[0].style.bar(subset=[18], color='lightblue')
+for part in range(len(html)):
+    html[part] = html[part].style.set_properties(**{'width': '50px'}).set_table_styles(styles).apply(highlight_cols, axis=None).render()
+    
+#html[1] = html[1].style.apply(highlight_cols, axis=None).set_table_styles(styles).render()
 
 
 
+
+#html = html.to_html()
 
 
 #pd.set_option('display.width', '800')
 
 
-'''
-df = df.style.set_properties(**{'background-color': 'white',
-                                'border': '1'}).render()
-'''
 #.highlight_null().render().split('\n')[:10]
 
 
@@ -246,22 +257,22 @@ html = (
     .render()
 )
 """
-
+#<style>table {width:840px;}</style>
 
 wrapper = \
 """
 <html>
     <head>
     </head>
-    <body><style>table {width:840px;}</style>
-    %s
+    <body><style>table {max-width:840px;}</style>
+    %s%s%s%s
     </body>
     </html>
 """
 
 fw = open('test.html','w')
 
-whole = wrapper % (html)
+whole = wrapper % (html[0], html[1], html[2], html[3])
 
 fw.write(whole)
 fw.close()
