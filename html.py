@@ -158,7 +158,7 @@ print(end-start)
 
 import pandas as pd
 
-blosum = pd.read_csv('blosum62.csv')
+#blosum = pd.read_csv('blosum62.csv')
 
 df = pd.DataFrame(sequence_matrix)
 
@@ -167,10 +167,31 @@ def hover(hover_color="#ffff99"):
     return dict(selector="tr:hover",
                 props=[("background-color", "%s" % hover_color)])
 
+
+
+
+
+def blocks(col='#E5D283'):
+    
+           
+
+def highlight_cols(x):
+    #copy df to new - original data are not changed
+    d = x.copy()
+    #select all values to default value - red color
+    #print(d.columns)
+    #d[d.columns] = 'background-color: red'
+    #d.columns = 'background-color: red'
+    #overwrite values grey color
+    
+    #d[[10,24]] = 'background-color: grey'
+    #return color df
+    return d  
+
 styles = [
     hover(),
     dict(selector="th",
-                 props=[("font-size", "8pt")]),
+                 props=[("font-size", "8pt"), ('background-color', 'red')]),
     dict(selector="tbody",
                  props=[("font-size", "8pt")])]
 
@@ -181,22 +202,33 @@ styles = [
 
 html = ''
 
+
 df.columns += 1
 df.index += 1
 
+df.index = [alignment[i].id for i in range(len(df.index))]
+
+
 nr_columns = len(df.columns)
+
+#df.columns = [i if (i%10==0) else '' for i in df.columns]
 
 col = [i for i in range(0,nr_columns) if (i % 40 == 0)]
 
+#html += df.style.apply(to_color, axis=0).render()
+
 for i,c in enumerate(col):
     if(c == col[-1]):
-        html += (df[df.columns[c:]].style.set_table_styles(styles).render())
+        html += (df[df.columns[c:]].style.apply(highlight_cols, axis=None).set_table_styles(styles).render())
     else:
        # print(i)
-        html += (df[df.columns[c:col[i+1]]].style.set_table_styles(styles).render())
+        html += (df[df.columns[c:col[i+1]]].style.apply(highlight_cols, axis=None).set_table_styles(styles).render())
 
 
-pd.set_option('display.width', '800')
+
+
+
+#pd.set_option('display.width', '800')
 
 
 '''
@@ -220,15 +252,16 @@ wrapper = \
 """
 <html>
     <head>
-
     </head>
-    <body>%s</body>
+    <body><style>table {width:840px;}</style>
+    %s
+    </body>
     </html>
 """
 
 fw = open('test.html','w')
 
-whole = wrapper % html
+whole = wrapper % (html)
 
 fw.write(whole)
 fw.close()
