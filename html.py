@@ -169,18 +169,33 @@ def color_most_freq(series):
     if count_dict[max_val] < _is or max_val == '-':
         max_val = 0  
     
-    colors = {0: 'black', 'F': 'yellow', 'P': 'cyan', 'G': 'green', 'I': 'pink', 'H': 'red', 'L': 'purple', 'S': 'green',
-              'D': 'green', 'E': 'green', 'K': 'green', 'Y': 'green', 'C': 'green', 'A': 'green', 'R': 'green', 'V': 'green',
-              'W': 'green', 'T': 'green'}
+    # Color scheme based on http://acces.ens-lyon.fr/biotic/rastop/help/colour.htm
+    
+    colors = {0: 'black',
+              'D': '#E60A0A', # ASP  - Bright Red
+              'E': '#E60A0A', # GLU - Bright Red
+              'C': '#E6E600', # CYS Yellow
+              'M': '#E6E600', # MET Yellow
+              'K': '#145AFF', # LYS Blue
+              'R': '#145AFF', # ARG Blue
+              'S': '#FA9600', # SER Orange
+              'T': '#FA9600', # THR Orange
+              'F': '#3232AA', # PHE Mid blue
+              'Y': '#3232AA', # TYR Mid blue
+              'N': '#00DCDC',
+              'Q': '#00DCDC',
+              'G': '#561010',#'#EBEBEB',
+              'I': '#0F820F',
+              'L': '#0F820F',
+              'V': '#0F820F',
+              'A': '#561010',#'#C8C8C8',
+              'W': '#B45AB4',
+              'H': '#8282D2',
+              'P': '#DC9682',
+              }
     
     color = colors[max_val]
     
-    if max_val == 'F':
-        color = 'green'
-    elif max_val == 'F':
-        color = 'green'
-    elif max_val == 'F':
-        color = 'green'
     return ['color: %s' % color if v == max_val else '' for v in series.values]
 
 def bold_most_freq(series):
@@ -199,8 +214,8 @@ def hover(hover_color="#f1eeee"):
       
 def highlight_cols(x):
     d = x.copy()
-    hb = [item for sublist in blocks_5 for item in sublist if item in d.columns]
-    d[hb] = 'background-color: #d0c5c4'
+    hb = [item+1 for sublist in blocks_5 for item in sublist if item+1 in d.columns]
+    d[hb] = 'background-color: #ded6d5'
     return d  
 
 styles = [
@@ -208,8 +223,11 @@ styles = [
     dict(selector="th",
                  props=[("font-size", "7pt"),
                         ("text-align", "left")]),
+    dict(selector="thead",
+                 props=[("font-size", "7pt"),
+                        ("text-align", "center")]),
     dict(selector="tbody",
-                 props=[("font-size", "8pt")])]
+                 props=[("font-size", "9pt")])]
 
 html = []
 
@@ -247,26 +265,35 @@ wrapper = \
     <head>
     </head>
     <body><style>table {width:640px; border-collapse: collapse; font-family: Verdana;}</style>
-    <p>Parameters used<br>
+    <p><b>Parameters used</b><br>
     Minimum Number Of Sequences For A Conserved Position: %d<br>
     Minimum Number Of Sequences For A Flanking Position: %d<br>
     Maximum Number Of Contiguous Nonconserved Positions: %d<br>
     Minimum Length Of A Block: %d<br>
     Allowed Gap Positions: None<br>
     </p>
-    <p>Flank positions of the 12 selected block(s)<br>
-    Flanks: </p>
+    <p><b>Flank positions of the %d selected block%s</b><br>
+    Flanks: %s</p>
+    <p><b>New number of positions in output: %d</b> (%s of the original %d positions)<br>
     <p>%s</p>
-    <p>%s</p>
-    <p>%s</p>
-    <p>%s</p>
+
     </body>
     </html>
 """
 
 fw = open('test.html','w')
 
-whole = wrapper % (_is, _fs, _cp, _bl_2, html[0], html[1], html[2], html[3])
+flanks = [(list(k.keys())[0]+1, list(k.keys())[-1]+1) for k in blocks_5]
+
+mult_flanks = ''
+if len(flanks) > 1:
+    mult_flanks = 's'
+
+pos_perc = str(round((len(new_positions)/len(positions)) * 100,0)) + '%'
+
+
+whole = wrapper % (_is, _fs, _cp, _bl_2, len(flanks), mult_flanks, flanks,
+                   len(new_positions), pos_perc, len(positions), '<p> </p>'.join(html))
 
 fw.write(whole)
 fw.close()
