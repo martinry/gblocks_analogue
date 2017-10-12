@@ -103,7 +103,6 @@ for block in blocks_2:
     for k,v in sorted(block.items()):
         if(v == -1):
             is_gap = True
-            #print(range(k-before,k+1))
             gaps.extend([g for g in range(k-before,k+1)])
         if(v == 0 and is_gap == False):
             before += 1
@@ -132,20 +131,15 @@ for i, block in enumerate(blocks_4):
         blocks_to_remove.append(i)
 blocks_5 = [b for i,b in enumerate(blocks_4) if i not in blocks_to_remove]
 
-
-
 new_positions = []
 
 for b in blocks_5:
     for k,v in sorted(b.items()):
         new_positions.append(positions[k])
 
-
-
 new_alignment = [list(i) for i in zip(*new_positions)]
 
 for i,s in enumerate(alignment):   
-    #new_seq = Seq(''.join([r if (ind == 0 or ind % 10 != 0) else (' ' + r) for ind,r in enumerate(new_alignment[i])]))
     new_seq = Seq(''.join(new_alignment[i]))
     s.seq = new_seq
 
@@ -154,132 +148,131 @@ SeqIO.write(alignment, "output5.fna", "fasta")
 
 end = time.clock()
 print(end-start)
-    
+
+
+######## HTML OUTPUT #########
+
 
 import pandas as pd
-
 #blosum = pd.read_csv('blosum62.csv')
 
 df = pd.DataFrame(sequence_matrix)
 
+from collections import defaultdict
 
-def hover(hover_color="#ffff99"):
+def color_most_freq(series):
+    count_dict = defaultdict(int)
+    for s in series.values:
+        count_dict[s] += 1
+    max_val = max(count_dict, key=count_dict.get)
+    
+    if count_dict[max_val] < _is or max_val == '-':
+        max_val = 0  
+    
+    colors = {0: 'black', 'F': 'yellow', 'P': 'cyan', 'G': 'green', 'I': 'pink', 'H': 'red', 'L': 'purple', 'S': 'green',
+              'D': 'green', 'E': 'green', 'K': 'green', 'Y': 'green', 'C': 'green', 'A': 'green', 'R': 'green', 'V': 'green',
+              'W': 'green', 'T': 'green'}
+    
+    color = colors[max_val]
+    
+    if max_val == 'F':
+        color = 'green'
+    elif max_val == 'F':
+        color = 'green'
+    elif max_val == 'F':
+        color = 'green'
+    return ['color: %s' % color if v == max_val else '' for v in series.values]
+
+def bold_most_freq(series):
+    count_dict = defaultdict(int)
+    for s in series.values:
+        count_dict[s] += 1
+    max_val = max(count_dict, key=count_dict.get)
+    
+    if count_dict[max_val] < _is or max_val == '-':
+        max_val = 0  
+    return ['font-weight: bold' if v == max_val else '' for v in series.values]
+
+def hover(hover_color="#f1eeee"):
     return dict(selector="tr:hover",
                 props=[("background-color", "%s" % hover_color)])
-
-
-#def blocks(col='#E5D283'):
-    
-           
-
+      
 def highlight_cols(x):
-    #copy df to new - original data are not changed
     d = x.copy()
-    #select all values to default value - red color
-    #print(d.columns)
-    #d[d.columns] = 'background-color: red'
-    #d.columns = 'background-color: red'
-    #overwrite values grey color
     hb = [item for sublist in blocks_5 for item in sublist if item in d.columns]
-    #print(hb)
-    #test_cols = [1,2,3,4,5,6,7,22]
-    #d[test_cols] = 'background-color: grey'
-    d[hb] = 'background-color: #8ee5ee'
-  #  d[[11,22]] = 'border-color: none'
-    #return color df
+    d[hb] = 'background-color: #d0c5c4'
     return d  
 
 styles = [
     hover(),
     dict(selector="th",
-                 props=[("font-size", "0pt")]),
+                 props=[("font-size", "7pt"),
+                        ("text-align", "left")]),
     dict(selector="tbody",
                  props=[("font-size", "8pt")])]
 
-#    dict(selector="th", props=[("font-size", "100%"),
-#                               ("text-align", "center")])
-#    dict(selector="caption", props=[("caption-side", "bottom")])
-
-
 html = []
 
-
 df.columns += 1
-df.index += 1
+#df.index += 1
 
 df.index = [alignment[i].id for i in range(len(df.index))]
 
-
-#app = df.style.set_table_styles(styles)
-
-
-
-
 nr_columns = len(df.columns)
 
-#df.columns = [i if (i%10==0) else '' for i in df.columns]
-
 col = [i for i in range(0,nr_columns) if (i % 40 == 0)]
-
-#html += df.style.apply(to_color, axis=0).render()
 
 for i,c in enumerate(col):
     if(c == col[-1]):
         html.append(df[df.columns[c:]])
     else:
-       # print(i)
         html.append(df[df.columns[c:col[i+1]]])
 
 
-#html[0].style.bar(subset=[18], color='lightblue')
+
+
 for part in range(len(html)):
-    html[part] = html[part].style.set_properties(**{'width': '50px'}).set_table_styles(styles).apply(highlight_cols, axis=None).render()
-    
-#html[1] = html[1].style.apply(highlight_cols, axis=None).set_table_styles(styles).render()
-
-
-
-
-#html = html.to_html()
-
-
-#pd.set_option('display.width', '800')
-
-
-#.highlight_null().render().split('\n')[:10]
-
-
-"""
-html = (
-    df.style
-    .set_properties(**{'font-size': '9pt', 'font-family': 'Calibri'})
-    #.bar(subset=[18], color='lightblue')
+    html[part] = html[part].style.set_properties(**{'text-align': 'center'})\
+    .set_table_styles(styles)\
+    .apply(highlight_cols, axis=None)\
+    .apply(color_most_freq, axis=0)\
+    .apply(bold_most_freq, axis=0)\
     .render()
-)
-"""
-#<style>table {width:840px;}</style>
+    print(part)
+
 
 wrapper = \
 """
 <html>
     <head>
     </head>
-    <body><style>table {max-width:840px;}</style>
-    %s%s%s%s
+    <body><style>table {width:640px; border-collapse: collapse; font-family: Verdana;}</style>
+    <p>Parameters used<br>
+    Minimum Number Of Sequences For A Conserved Position: %d<br>
+    Minimum Number Of Sequences For A Flanking Position: %d<br>
+    Maximum Number Of Contiguous Nonconserved Positions: %d<br>
+    Minimum Length Of A Block: %d<br>
+    Allowed Gap Positions: None<br>
+    </p>
+    <p>Flank positions of the 12 selected block(s)<br>
+    Flanks: </p>
+    <p>%s</p>
+    <p>%s</p>
+    <p>%s</p>
+    <p>%s</p>
     </body>
     </html>
 """
 
 fw = open('test.html','w')
 
-whole = wrapper % (html[0], html[1], html[2], html[3])
+whole = wrapper % (_is, _fs, _cp, _bl_2, html[0], html[1], html[2], html[3])
 
 fw.write(whole)
 fw.close()
 
-
-
-
+end = time.clock()
+print(end-start)
 
 
 
