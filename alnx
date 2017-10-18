@@ -190,10 +190,10 @@ def find_gaps(list_of_blocks):
         if(len(gaps) != 0):
             all_gaps.extend(gaps)
 
-trim(flanked_blocks)
+find_gaps(flanked_blocks)
 
-def 
 blocks = {}
+    
 for block in flanked_blocks:
     for k,v in block.items():
         if(k not in all_gaps):
@@ -218,6 +218,8 @@ new_alignment = [list(i) for i in zip(*new_positions)]
 for i,s in enumerate(alignment):   
     new_seq = Seq(''.join(new_alignment[i]))
     s.seq = new_seq
+    
+    #return new_alignment
 
 SeqIO.write(alignment, "output5.fna", "fasta")
 
@@ -249,8 +251,8 @@ def to_html(matrix):
         # Color scheme based on http://acces.ens-lyon.fr/biotic/rastop/help/colour.htm
         
         colors = {0: 'black',
-                  'D': '#E60A0A', # ASP  - Bright Red
-                  'E': '#E60A0A', # GLU - Bright Red
+                  'D': '#E60A0A', # ASP Bright Red
+                  'E': '#E60A0A', # GLU Bright Red
                   'C': '#E6E600', # CYS Yellow
                   'M': '#E6E600', # MET Yellow
                   'K': '#145AFF', # LYS Blue
@@ -291,15 +293,12 @@ def to_html(matrix):
           
     def highlight_cols(x):
         d = x.copy()
-        hb = [item+1 for sublist in blocks_5 for item in sublist if item+1 in d.columns]
+        hb = [item+1 for sublist in blocks for item in sublist if item+1 in d.columns]
         d[hb] = 'background-color: #ded6d5'
         return d  
     
     styles = [
         hover(),
-    #    dict(selector="thead",
-    #                 props=[("font-size", "4pt !important"),
-    #                        ("text-align", "center"),
         dict(selector="th",
                      props=[("font-size", "5pt"),
                             ("text-align", "left")]),
@@ -362,7 +361,7 @@ def to_html(matrix):
     
     fw = open('test.html','w')
     
-    flanks = [(list(k.keys())[0]+1, list(k.keys())[-1]+1) for k in blocks_5]
+    flanks = [(list(k.keys())[0]+1, list(k.keys())[-1]+1) for k in blocks]
     
     mult_flanks = ''
     if len(flanks) > 1:
@@ -382,6 +381,5 @@ def to_html(matrix):
 
 end = time.clock()
 print(end-start)
-
 
 
