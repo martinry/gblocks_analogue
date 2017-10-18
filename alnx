@@ -147,60 +147,70 @@ from itertools import groupby, count
 def group_by_consecutives(d):
     return [{index:d[index] for index in set(v)} for k, v in groupby(d, key=lambda i,j=count(): i-next(j))]
 
-# The conservation_level dictionary split at positions of contiguous nonconserved regions
-blocks = group_by_consecutives(conservation_level)
-
-# Look for highly conserved positions (where value is 2) and keep the indices of these in a list 
-hc_positions = [[k for k,v in sorted(d.items()) if v == 2] for d in blocks]
-
-# Extract the first and last HC in each block
-flanks = [(f[0], f[-1]) for f in hc_positions if len(f) > 1]
-
-# Redefine blocks anchored by flanking positions
-blocks = [{key: value for key, value in conservation_level.items() if (key >= start) and (key <= end)} for (start, end) in flanks]
-
+def set_flanks():
+    # The conservation_level dictionary split at occurrences of contiguous nonconserved positions
+    _blocks = group_by_consecutives(conservation_level)
     
-all_gaps = []
-for block in blocks:
-    gaps = []
-    is_gap = False
-    before = 0
-    after = 0
-    for k,v in sorted(block.items()):
-        if(v == -1):
-            is_gap = True
-            gaps.extend([g for g in range(k-before,k+1)])
-        if(v == 0 and is_gap == False):
-            before += 1
-        elif(v > 0 and is_gap == False):
-            before = 0
-        if(v == 0 and is_gap == True):
-            after += 1
-        elif(v > 0 and is_gap == True):
-            gaps.extend([g for g in range((k-after), k)])
-            after = 0
-            is_gap = False
-    if(len(gaps) != 0):
-        all_gaps.extend(gaps)
+    # Look for highly conserved positions (where value is 2) and keep the indices of these in a list 
+    hc_positions = [[k for k,v in sorted(d.items()) if v == 2] for d in _blocks]
+    
+    # Extract the first and last HC in each block
+    flanks = [(f[0], f[-1]) for f in hc_positions if len(f) > 1]
+    
+    # Redefine blocks anchored by flanking positions
+    _blocks = [{key: value for key, value in conservation_level.items() if 
+              (key >= start) and (key <= end)} for (start, end) in flanks]
+    return _blocks
 
-blocks_3 = {}
-for b in blocks:
-    for k,v in b.items():
+flanked_blocks = set_flanks()
+
+all_gaps = [] # All gap positions
+
+# Find gaps and nonconserved positions adjacent to gaps from a block
+def find_gaps(list_of_blocks):
+    for block in list_of_blocks:
+        gaps = []
+        is_gap = False
+        before = 0
+        after = 0
+        for k,v in sorted(block.items()):
+            if(v == -1):
+                is_gap = True
+                gaps.extend([g for g in range(k-before,k+1)])
+            if(v == 0 and is_gap == False):
+                before += 1
+            elif(v > 0 and is_gap == False):
+                before = 0
+            if(v == 0 and is_gap == True):
+                after += 1
+            elif(v > 0 and is_gap == True):
+                gaps.extend([g for g in range((k-after), k)])
+                after = 0
+                is_gap = False
+        if(len(gaps) != 0):
+            all_gaps.extend(gaps)
+
+trim(flanked_blocks)
+
+def 
+blocks = {}
+for block in flanked_blocks:
+    for k,v in block.items():
         if(k not in all_gaps):
-            blocks_3[k] = v
+            blocks[k] = v
 
-# Remove small remaining blocks <= BL2
+# Remove small remaining blocks <= _b4
 blocks_to_remove = []
-blocks_4 = group_by_consecutives(blocks_3)
-for i, block in enumerate(blocks_4):
+blocks = group_by_consecutives(blocks)
+for i, block in enumerate(blocks):
     if len(block) < _b4:
         blocks_to_remove.append(i)
-blocks_5 = [b for i,b in enumerate(blocks_4) if i not in blocks_to_remove]
+blocks = [b for i,b in enumerate(blocks) if i not in blocks_to_remove]
 
 new_positions = []
 
-for b in blocks_5:
-    for k,v in sorted(b.items()):
+for block in blocks:
+    for k,v in sorted(block.items()):
         new_positions.append(positions[k])
 
 new_alignment = [list(i) for i in zip(*new_positions)]
