@@ -4,7 +4,7 @@
 import time
 from Bio import SeqIO
 from Bio.Seq import Seq
-
+import pandas as pd
 
 """
 ### Argparse ###
@@ -53,6 +53,16 @@ i.e. the 0th character of each sequence
 
 """
 
+
+######## SIMILARITY MATRIX #########
+
+sim = {('C', 'C')}
+
+
+sim = pd.read_csv('sim.csv', index_col='aa')
+
+sim = sim.to_dict()
+
 ######## SET CONSERVATION #########
 
 nr_seqs = len(positions[0])
@@ -81,16 +91,19 @@ _b4     = 10
 _b5     = None
 
 # Use Similarity Matrices
-# (Yes, No)
-_b6     = 0
+# (Yes (1), No (0))
+_b6     = 1
 
 
-def classifier(freq, most_common_freq):  
+def classifier(most_common_freq, sim_score):  
     if(most_common_freq < _b1):
         return 0
     elif((most_common_freq >= _b1) and \
          (most_common_freq < _b2)):
-        return 1
+        if _b6 == 1 and sim_score > 8:
+            return 2
+        else:
+            return 1
     elif(most_common_freq >= _b2):
         return 2
 
@@ -105,11 +118,24 @@ def classifier(freq, most_common_freq):
 def set_conservation(pos):
     max_residue = max(pos,key=pos.count)
     max_freq = pos.count(max_residue)
+    
+    new_pos = [p for p in pos if p != max_residue]
+    
+    second_max_residue = ''
+    second_max_freq = 0
+    similarity_score = 0
 
+    if len(new_pos) > 0:
+        second_max_residue = max(new_pos,key=new_pos.count)
+    
+    if max_residue != '-' and second_max_residue != '-' and second_max_residue != '':
+        second_max_freq = new_pos.count(second_max_residue)
+        similarity_score = sim[max_residue][second_max_residue] * second_max_freq
+    
     if(any(v == '-' for v in pos)):
         return(-1)
     else:
-        return classifier(max_residue, max_freq)
+        return classifier(max_freq, similarity_score)
 
 
 # Remove Contiguous Nonconserved Positions < _b3
@@ -117,16 +143,16 @@ def set_conservation(pos):
 def remove_contiguous_nonconserved(pos):
     counter = 0
     for index, p in enumerate(pos):
-            conservation = set_conservation(p)
-            if(conservation <= 0):  # If positions is nonconserved
-                counter += 1        # Increment by 1
-            else:
-                counter = 0         # Reset if position is conserved
-            if(counter <= _b3):     # if not too many contiguous nonconserved positions
-                conservation_level[index] = conservation # Set {Index: Conservation level} 
-            elif(counter == _b3+1): # If too many contiguous nonconserved positions
-                for k in range(index-_b3, index):
-                    del conservation_level[k] # Remove the last _b3 indices
+        conservation = set_conservation(p)
+        if(conservation <= 0):  # If positions is nonconserved
+            counter += 1        # Increment by 1
+        else:
+            counter = 0         # Reset if position is conserved
+        if(counter <= _b3):     # if not too many contiguous nonconserved positions
+            conservation_level[index] = conservation # Set {Index: Conservation level} 
+        elif(counter == _b3+1): # If too many contiguous nonconserved positions
+            for k in range(index-_b3, index):
+                del conservation_level[k] # Remove the last _b3 indices
 
 conservation_level = {}
 remove_contiguous_nonconserved(positions)
@@ -213,16 +239,15 @@ for block in blocks:
     for k,v in sorted(block.items()):
         new_positions.append(positions[k])
 
+# This is the final alignment as positions in a 2D-list
+# We need to convert these into sequence records
 new_alignment = [list(i) for i in zip(*new_positions)]
 
-for i,s in enumerate(alignment):   
-    new_seq = Seq(''.join(new_alignment[i]))
-    s.seq = new_seq
+for i,s in enumerate(alignment): # Iterate through the original alignment
+    new_seq = Seq(''.join(new_alignment[i])) # take the corresponding position of the new alignment
+    s.seq = new_seq 
     
-    #return new_alignment
-
 SeqIO.write(alignment, "output5.fna", "fasta")
-
 
 end = time.clock()
 print(end-start)
@@ -232,7 +257,6 @@ print(end-start)
 
 def to_html(matrix):
     
-    import pandas as pd
     #blosum = pd.read_csv('blosum62.csv')
     
     df = pd.DataFrame(matrix)
@@ -297,15 +321,6 @@ def to_html(matrix):
         d[hb] = 'background-color: #ded6d5'
         return d  
     
-    styles = [
-        hover(),
-        dict(selector="th",
-                     props=[("font-size", "5pt"),
-                            ("text-align", "left")]),
-        dict(selector="tbody",
-                     props=[("font-size", "8pt"),
-                            ("font-weight", "normal")])]
-    
     html = []
     
     df.columns += 1
@@ -323,18 +338,32 @@ def to_html(matrix):
         else:
             html.append(df[df.columns[c:col[i+1]]])
     
-    
     #.style.set_properties(**{'text-align': 'center'})\
     
-    for part in range(len(html)):
-        html[part] = html[part].style\
-        .set_table_styles(styles)\
-        .apply(highlight_cols, axis=None)\
-        .apply(color_most_freq, axis=0)\
-        .apply(bold_most_freq, axis=0)\
-        .render()
-        print("Generating HTML output part %s/%s" % (part+1, len(html)+1))
+    def apply_styles(table):
+        
+        styles = [
+        hover(),
+        dict(selector="th",
+                     props=[("font-size", "5pt"),
+                            ("text-align", "left")]),
+        dict(selector="tbody",
+                     props=[("font-size", "8pt"),
+                            ("font-weight", "normal")])]
+        
+        
+        for part in range(len(table)):
+            table[part] = table[part].style\
+            .set_table_styles(styles)\
+            .apply(highlight_cols, axis=None)\
+            .apply(color_most_freq, axis=0)\
+            .apply(bold_most_freq, axis=0)\
+            .render()
+            print("Generating HTML output part %s/%s" % (part+1, len(table)+1))
     
+        return table
+
+    apply_styles(html)
     
     wrapper = \
     """
@@ -361,7 +390,7 @@ def to_html(matrix):
     
     fw = open('test.html','w')
     
-    flanks = [(list(k.keys())[0]+1, list(k.keys())[-1]+1) for k in blocks]
+    flanks = [(list(sorted(k.keys()))[0]+1, list(sorted(k.keys()))[-1]+1) for k in blocks]
     
     mult_flanks = ''
     if len(flanks) > 1:
@@ -377,7 +406,7 @@ def to_html(matrix):
     fw.close()
     
 
-#to_html(sequence_matrix)
+to_html(sequence_matrix)
 
 end = time.clock()
 print(end-start)
