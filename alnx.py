@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import time
+import os
 from Bio import SeqIO
 from Bio.Seq import Seq
 import pandas as pd
@@ -28,17 +28,9 @@ parser.add_argument(
 
 args = parser.parse_args()
 
-
-start = time.clock()
-
-
 ######## PARSING #########
 
-#alignment = list(SeqIO.parse('nad5.pir', 'pir'))
-
 alignment = list(SeqIO.parse(args.infile, 'pir'))
-
-#original_alignment = list(SeqIO.parse('nad3.pir', 'pir'))
 
 ######## FORMAT DATA STRUCTURE #########
 
@@ -54,7 +46,6 @@ $ positions[0]
 i.e. the 0th character of each sequence
 
 """
-
 
 ######## SIMILARITY MATRIX #########
 
@@ -249,13 +240,22 @@ new_alignment = [list(i) for i in zip(*new_positions)]
 
 for i,s in enumerate(alignment): # Iterate through the original alignment
     new_seq = Seq(''.join(new_alignment[i])) # take the corresponding position of the new alignment
-    s.seq = new_seq 
-    
-SeqIO.write(alignment, "output5.fna", "fasta")
+    s.seq = new_seq
 
-end = time.clock()
-print(end-start)
+cwd = os.getcwd()
 
+filepath = "output/"
+
+#os.makedirs(os.path.dirname(filepath), exist_ok=True)
+os.makedirs(filepath, exist_ok = True)
+
+os.chdir('output/')
+
+print("Current working directory changed from %s to %s" % (cwd,os.getcwd()))
+print()
+
+output_fna = args.infile.name + '.fna'    
+SeqIO.write(alignment, output_fna, "fasta")
 
 ######## HTML OUTPUT #########
 
@@ -377,10 +377,10 @@ def to_html(matrix):
         <body><style>table {width: 883px; border-collapse: collapse; font-family: Verdana;}
         </style>
         <p><b>Parameters used</b><br>
-        Minimum Number Of Sequences For A Conserved Position: %d<br>
-        Minimum Number Of Sequences For A Flanking Position: %d<br>
-        Maximum Number Of Contiguous Nonconserved Positions: %d<br>
-        Minimum Length Of A Block: %d<br>
+            Minimum Number Of Sequences For A Conserved Position: %d<br>
+            Minimum Number Of Sequences For A Flanking Position: %d<br>
+            Maximum Number Of Contiguous Nonconserved Positions: %d<br>
+            Minimum Length Of A Block: %d<br>
         Allowed Gap Positions: None<br>
         </p>
         <p><b>Flank positions of the %d selected block%s</b><br>
@@ -391,8 +391,9 @@ def to_html(matrix):
         </body>
         </html>
     """
+    output_html = args.infile.name + '.html'
     
-    fw = open('test.html','w')
+    fw = open(output_html,'w')
     
     flanks = [(list(sorted(k.keys()))[0]+1, list(sorted(k.keys()))[-1]+1) for k in blocks]
     
@@ -411,8 +412,3 @@ def to_html(matrix):
     
 
 to_html(sequence_matrix)
-
-end = time.clock()
-print(end-start)
-
-
